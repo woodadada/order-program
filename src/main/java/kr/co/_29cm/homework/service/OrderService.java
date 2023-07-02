@@ -11,12 +11,9 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
-import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.Scanner;
-import java.util.stream.Collectors;
 
 /**
  * packageName   : kr.co._29cm.homework.service
@@ -35,8 +32,7 @@ import java.util.stream.Collectors;
 public class OrderService {
     private final ProductService productService;
 
-    private final int FREE_DELIVERY_PRICE = 50000;
-    private final int DELIVERY_PRICE = 2500;
+    private final OrderView orderView;
 
     public void order() {
 
@@ -49,21 +45,8 @@ public class OrderService {
         System.out.print(TextConstant.ORDER_GUIDE_TEXT);
         String input = scanner.nextLine();
 
-        if(!input.equalsIgnoreCase(OrderConstant.ORDER_COMMAND)) {
-            System.out.println(TextConstant.ORDER_START_GUIDE_TEXT);
-            isOrdering = false;
-        }
-
-        if(input.equalsIgnoreCase(OrderConstant.ORDER_COMMAND)) {
-            // 상품 목록 출력
-            System.out.println(OrderConstant.HEADER);
-            products.forEach(product -> System.out.println(OrderView.toDisplay(product)));
-        }
-
-        if (input.equalsIgnoreCase(OrderConstant.QUIT_COMMAND) || input.equalsIgnoreCase(OrderConstant.QUIT_COMMAND_ALT)) {
-            System.out.println(TextConstant.DONE_ORDER);
-            isOrdering = false;
-        }
+        checkOrderCommandAndPrintText(input, isOrdering, products);
+        checkQuitCommandAndPrintText(input, isOrdering);
 
         while (isOrdering) {
             isDone = false;
@@ -74,7 +57,6 @@ public class OrderService {
                 // 주문 완료
                 isDone = true;
             } else {
-                // 상품 존재 여부
                 if(!productService.isExist(Long.parseLong(input))) {
                     System.out.println(ErrorMessage.NOT_FOUND_PRODUCT);
                     continue;
@@ -106,10 +88,8 @@ public class OrderService {
             System.out.println(ErrorMessage.NOT_FOUND_ORDER_ITEMS);
         } else {
             try {
-                // 상품 재고 차감
                 productService.decreaseProductQuantity(orderItems);
-                // 주문 상품 정보 출력
-                printOrderInfo(orderItems);
+                orderView.printOrderInfo(orderItems);
             } catch (SoldOutException e) {
                 System.out.println(ErrorMessage.SOLD_OUT);
             }
@@ -117,45 +97,22 @@ public class OrderService {
         order();
     }
 
-    private int calculateTotalOrderAmount(List<OrderProduct> orderItems) {
-        int price = 0;
-        Map<Long, Product> productMap = productService.getProductMap(orderItems.stream().map(OrderProduct::getProductId).collect(Collectors.toList()));
-
-        for (OrderProduct orderItem : orderItems) {
-            Product product = productMap.get(orderItem.getProductId());
-            price += product.getPrice() * orderItem.getQuantity();
+    public void checkOrderCommandAndPrintText(String input, boolean isOrdering, List<Product> products) {
+        if(!input.equalsIgnoreCase(OrderConstant.ORDER_COMMAND)) {
+            System.out.println(TextConstant.ORDER_START_GUIDE_TEXT);
+            isOrdering = false;
         }
 
-        return price;
-    }
-
-    private void printOrderInfo(List<OrderProduct> orderItems) {
-        // 주문 상품 가격
-        int totalOrderAmount = calculateTotalOrderAmount(orderItems);
-        Map<Long, Product> productMap = productService.getProductMap(orderItems.stream().map(OrderProduct::getProductId).collect(Collectors.toList()));
-        System.out.println(TextConstant.DONE_ORDER);
-        System.out.println(TextConstant.ORDER_HISTORY);
-        System.out.println(TextConstant.LINE);
-
-        for (OrderProduct orderItem : orderItems) {
-            System.out.println(productMap.get(orderItem.getProductId()).getName() + " - " + orderItem.getQuantity());
+        if(input.equalsIgnoreCase(OrderConstant.ORDER_COMMAND)) {
+            System.out.println(OrderConstant.HEADER);
+            products.forEach(product -> System.out.println(orderView.toDisplay(product)));
         }
+    }
 
-        System.out.println(TextConstant.LINE);
-        System.out.println(TextConstant.ORDER_PRICE + priceFormat(totalOrderAmount) + "원");
-        if(totalOrderAmount < FREE_DELIVERY_PRICE) {
-            System.out.println(TextConstant.DELIVERY_PRICE + priceFormat(DELIVERY_PRICE));
-            totalOrderAmount += DELIVERY_PRICE;
+    public void checkQuitCommandAndPrintText(String input, boolean isOrdering) {
+        if (input.equalsIgnoreCase(OrderConstant.QUIT_COMMAND) || input.equalsIgnoreCase(OrderConstant.QUIT_COMMAND_ALT)) {
+            System.out.println(TextConstant.DONE_ORDER);
+            isOrdering = false;
         }
-        System.out.println(TextConstant.LINE);
-        System.out.println(TextConstant.AMOUNT_ORDER_PRICE + priceFormat(totalOrderAmount) + "원");
     }
-
-    private String priceFormat(int price) {
-        DecimalFormat decimalFormat = new DecimalFormat("#,###");
-        String formattedNumber = decimalFormat.format(price);
-
-        return formattedNumber;
-    }
-
 }
