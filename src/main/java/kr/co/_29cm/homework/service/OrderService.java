@@ -6,6 +6,7 @@ import kr.co._29cm.homework.constant.TextConstant;
 import kr.co._29cm.homework.exception.SoldOutException;
 import kr.co._29cm.homework.model.OrderProduct;
 import kr.co._29cm.homework.model.Product;
+import kr.co._29cm.homework.view.OrderView;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -56,7 +57,7 @@ public class OrderService {
         if(input.equalsIgnoreCase(OrderConstant.ORDER_COMMAND)) {
             // 상품 목록 출력
             System.out.println(OrderConstant.HEADER);
-            products.forEach(product -> System.out.println(product.toDisplay()));
+            products.forEach(product -> System.out.println(OrderView.toDisplay(product)));
         }
 
         if (input.equalsIgnoreCase(OrderConstant.QUIT_COMMAND) || input.equalsIgnoreCase(OrderConstant.QUIT_COMMAND_ALT)) {

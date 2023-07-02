@@ -38,18 +38,6 @@ public class Product {
     @Column(columnDefinition = "INT UNSIGNED")
     private int quantity;
 
-    public String toDisplay() {
-        StringBuilder sb = new StringBuilder();
-        sb.append(this.id).append("    ")
-                .append(this.name)
-                .append("    ")
-                .append(this.price)
-                .append("    ")
-                .append(this.quantity);
-
-        return sb.toString();
-    }
-
     public void decreaseQuantity(int quantity) {
         if(this.quantity - quantity < 0) {
             throw new SoldOutException(ErrorCode.SOLD_OUT_ERROR);
